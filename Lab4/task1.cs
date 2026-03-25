@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 #nullable disable
 
@@ -8,7 +8,16 @@ namespace Lab4
     {
         class Triangle
         {
-            public Triangle() : this(3, 3, 3, 0) { }
+            protected int a;        
+            protected int b;       
+            protected int c;     
+            protected int color;    
+            protected bool isValid;  
+
+            public Triangle() : this(3, 3, 3, 0)
+            {
+                
+            }
 
             public Triangle(int a, int b, int c, int color = 0)
             {
@@ -18,14 +27,16 @@ namespace Lab4
                     this.b = b;
                     this.c = c;
                     this.color = color;
-                    isValid = true;
+                    this.isValid = true;
                 }
                 else
                 {
-                    Console.WriteLine("Помилка: Задані сторони не утворюють трикутник!");
-                    this.a = 3; this.b = 3; this.c = 3;
+                    Console.WriteLine("Помилка: задані сторони не утворюють трикутник!");
+                    this.a = 3;
+                    this.b = 3;
+                    this.c = 3;
                     this.color = 0;
-                    isValid = false;
+                    this.isValid = false;
                 }
             }
 
@@ -35,11 +46,13 @@ namespace Lab4
                 {
                     switch (index)
                     {
-                        case 0: return a;
-                        case 1: return b;
-                        case 2: return c;
-                        case 3: return color;
-                        default: return -1;
+                        case 0: return this.a;
+                        case 1: return this.b;
+                        case 2: return this.c;
+                        case 3: return this.color;
+                        default:
+                            Console.WriteLine($"Помилка індексатора (get): індекс [{index}] недопустимий! Допустимі: 0, 1, 2, 3");
+                            return -1;
                     }
                 }
                 set
@@ -47,113 +60,173 @@ namespace Lab4
                     switch (index)
                     {
                         case 0:
-                            if (IsValidTriangle(value, b, c)) a = value;
-                            else Console.WriteLine("Помилка індексації [0]: Сторона недопустима.");
+                            if (IsValidTriangle(value, this.b, this.c))
+                                this.a = value;
+                            else
+                                Console.WriteLine($"Помилка індексатора (set): значення {value} не утворює трикутник (a)");
                             break;
+
                         case 1:
-                            if (IsValidTriangle(a, value, c)) b = value;
-                            else Console.WriteLine("Помилка індексації [1]: Сторона недопустима.");
+                            if (IsValidTriangle(this.a, value, this.c))
+                                this.b = value;
+                            else
+                                Console.WriteLine($"Помилка індексатора (set): значення {value} не утворює трикутник (b)");
                             break;
+
                         case 2:
-                            if (IsValidTriangle(a, b, value)) c = value;
-                            else Console.WriteLine("Помилка індексації [2]: Сторона недопустима.");
+                            if (IsValidTriangle(this.a, this.b, value))
+                                this.c = value;
+                            else
+                                Console.WriteLine($"Помилка індексатора (set): значення {value} не утворює трикутник (c)");
                             break;
+
                         case 3:
-                            color = value;
+                          
+                            this.color = value;
+                            break;
+
+                        default:
+                            Console.WriteLine($" Помилка індексатора (set): індекс [{index}] недопустимий! Допустимі: 0, 1, 2, 3");
                             break;
                     }
                 }
             }
 
-            // Оператори ++, --
-            public static Triangle operator ++(Triangle t) { t.a++; t.b++; t.c++; t.UpdateValidity(); return t; }
-            public static Triangle operator --(Triangle t) { t.a--; t.b--; t.c--; t.UpdateValidity(); return t; }
+            public static Triangle operator ++(Triangle t)
+            {
+                if (t != null)
+                {
+                    t.a++;
+                    t.b++;
+                    t.c++;
+                    t.UpdateValidity(); 
+                }
+                return t;
+            }
 
-            // Оператори true, false
-            public static bool operator true(Triangle t) => t.isValid;
-            public static bool operator false(Triangle t) => !t.isValid;
+            public static Triangle operator --(Triangle t)
+            {
+                if (t != null)
+                {
+                    t.a--;
+                    t.b--;
+                    t.c--;
+                    t.UpdateValidity();
+                }
+                return t;
+            }
 
-            // Оператор * (скаляр)
+            public static bool operator true(Triangle t) => t?.isValid == true;
+            public static bool operator false(Triangle t) => t?.isValid != true;
+
             public static Triangle operator *(Triangle t, int scalar)
             {
+                if (t == null) return null;
                 return new Triangle(t.a * scalar, t.b * scalar, t.c * scalar, t.color);
             }
 
-            // Комутативне множення (скаляр * вектор)
             public static Triangle operator *(int scalar, Triangle t) => t * scalar;
-
-            // Перетворення типів
-            public static explicit operator string(Triangle t) => t.ToString();
+            public static explicit operator string(Triangle t)
+            {
+                if (t == null) return "Triangle[null]";
+                return t.ToString(); 
+            }
 
             public static explicit operator Triangle(string s)
             {
                 try
                 {
-                    string[] parts = s.Split(',');
-                    if (parts.Length >= 3)
+                    if (string.IsNullOrWhiteSpace(s))
+                        return new Triangle(); 
+
+                    string[] parts = s.Split(new[] { ',', ';', ' ' },
+                                           StringSplitOptions.RemoveEmptyEntries);
+
+                    if (parts.Length < 3)
                     {
-                        int a = int.Parse(parts[0]);
-                        int b = int.Parse(parts[1]);
-                        int c = int.Parse(parts[2]);
-                        int color = (parts.Length > 3) ? int.Parse(parts[3]) : 0;
-                        return new Triangle(a, b, c, color);
+                        Console.WriteLine("Попередження: недостатньо даних для створення трикутника");
+                        return new Triangle();
                     }
+
+                    int a = int.Parse(parts[0].Trim());
+                    int b = int.Parse(parts[1].Trim());
+                    int c = int.Parse(parts[2].Trim());
+                    int color = (parts.Length > 3) ? int.Parse(parts[3].Trim()) : 0;
+
+                    return new Triangle(a, b, c, color);
+                }
+                catch (FormatException)
+                {
+                    Console.WriteLine("Помилка формату: не вдалося розібрати рядок");
                     return new Triangle();
                 }
-                catch { return new Triangle(); }
+                catch (OverflowException)
+                {
+                    Console.WriteLine("Помилка: значення виходять за межі типу int");
+                    return new Triangle();
+                }
             }
 
-            // Методи
-            public int GetPerimeter() => a + b + c;
+            public int GetPerimeter() => this.a + this.b + this.c;
 
             public double GetArea()
             {
-                if (!isValid) return 0;
-                double p = GetPerimeter() / 2.0;
-                return Math.Sqrt(p * (p - a) * (p - b) * (p - c));
+                if (!this.isValid) return 0.0;
+
+                double p = GetPerimeter() / 2.0; 
+                return Math.Sqrt(p * (p - this.a) * (p - this.b) * (p - this.c));
             }
 
             public override string ToString()
             {
-                return string.Format("Triangle[{0}, {1}, {2}] P={3} S={4:F2} Color={5}", a, b, c, GetPerimeter(), GetArea(), color);
+                return string.Format(
+                    "Triangle[a={0}, b={1}, c={2}] | P={3}, S={4:F2} | Color={5} | Valid={6}",
+                    this.a, this.b, this.c,
+                    GetPerimeter(), GetArea(),
+                    this.color, this.isValid ? "Так" : "Ні");
             }
 
             private void UpdateValidity()
             {
-                isValid = IsValidTriangle(a, b, c);
+                this.isValid = IsValidTriangle(this.a, this.b, this.c);
             }
 
             private static bool IsValidTriangle(int x, int y, int z)
             {
-                return (x > 0 && y > 0 && z > 0) && (x + y > z) && (x + z > y) && (y + z > x);
-            }
+                bool positive = (x > 0) && (y > 0) && (z > 0);
+                bool triangleInequality = (x + y > z) &&
+                                         (x + z > y) &&
+                                         (y + z > x);
 
-            // Поля
-            protected int a, b, c;
-            protected int color;
-            protected bool isValid;
+                return positive && triangleInequality;
+            }
         }
 
         public static void Run()
         {
-            Console.WriteLine("ЗАВДАННЯ 1.2 - Клас Triangle (Розширений)");
-            Console.WriteLine(new string('-', 60));
+            Console.WriteLine("ЗАВДАННЯ 1.2 - Клас Triangle (Лекція 3: Індексатори та Оператори)");
+            Console.WriteLine(new string('-', 70));
 
-            // 1. Тестування індексатора
             Console.WriteLine("\n1. Тестування індексатора:");
             Triangle t1 = new Triangle(3, 4, 5, 10);
             Console.WriteLine("Початковий стан: {0}", t1);
             Console.WriteLine("Індекс [0] (a): {0}", t1[0]);
             Console.WriteLine("Індекс [3] (color): {0}", t1[3]);
 
+            Console.WriteLine("Спроба читання за індексом [5]:");
+            int val = t1[5];
+            Console.WriteLine("Повернуто значення: {0}", val);
+
             Console.WriteLine("Зміна через індексатор [0] = 4:");
             t1[0] = 4;
             Console.WriteLine("Новий стан: {0}", t1);
 
-            Console.WriteLine("Спроба зміни [0] = 100 (має бути помилка):");
+            Console.WriteLine("Спроба зміни [0] = 100 (має бути помилка валідності):");
             t1[0] = 100;
 
-            // 2. Тестування операторів ++ та --
+            Console.WriteLine("Спроба запису за індексом [10]:");
+            t1[10] = 99;
+
             Console.WriteLine("\n2. Тестування операторів ++ та --:");
             Triangle t2 = new Triangle(3, 3, 3, 5);
             Console.WriteLine("До ++: {0}", t2);
@@ -162,22 +235,19 @@ namespace Lab4
             t2--;
             Console.WriteLine("Після --: {0}", t2);
 
-            // 3. Тестування операторів true / false
             Console.WriteLine("\n3. Тестування операторів true / false:");
             Triangle tValid = new Triangle(3, 4, 5, 1);
             if (tValid)
-                Console.WriteLine("✓ t1 є валідним трикутником");
+                Console.WriteLine("tValid є валідним трикутником");
             else
-                Console.WriteLine("✗ t1 НЕ є валідним трикутником");
+                Console.WriteLine("tValid НЕ є валідним трикутником");
 
-            Triangle tInvalid = new Triangle(1, 1, 1, 0);
-            tInvalid--; 
+            Triangle tInvalid = new Triangle(1, 1, 10, 0);
             if (tInvalid)
-                Console.WriteLine("✗ tInvalid є валідним (помилка!)");
+                Console.WriteLine("tInvalid є валідним (помилка!)");
             else
-                Console.WriteLine("✓ tInvalid НЕ є валідним трикутником");
+                Console.WriteLine("tInvalid НЕ є валідним трикутником");
 
-            // 4. Тестування оператора * (скаляр)
             Console.WriteLine("\n4. Тестування оператора * (скаляр):");
             Triangle t3 = new Triangle(3, 4, 5, 1);
             Console.WriteLine("Оригінал: {0}", t3);
@@ -187,15 +257,19 @@ namespace Lab4
             Console.WriteLine("3 * t3: {0}", t3Scaled2);
 
             Console.WriteLine("\n5. Тестування перетворення типів:");
-            string sTriangle = (string)t1;
+            string sTriangle = (string)t1; 
             Console.WriteLine("Triangle → string: {0}", sTriangle);
 
             string input = "5,5,5,7";
             Console.WriteLine("Вхідний рядок: \"{0}\"", input);
-            Triangle tFromString = (Triangle)input;
+            Triangle tFromString = (Triangle)input; 
             Console.WriteLine("Результат: {0}", tFromString);
 
-            Console.WriteLine("\n" + new string('-', 60));
+            Console.WriteLine("Спроба перетворення некоректного рядка:");
+            Triangle tBad = (Triangle)"invalid";
+            Console.WriteLine("Результат: {0}", tBad);
+
+            Console.WriteLine("\n" + new string('-', 70));
         }
     }
 }
